@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,16 +25,17 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.lornwolf.bizsys.bean.Menu;
 import com.lornwolf.common.ExcelUtil;
 
 /**
- * 读取intra-mart导出的菜单定义XML，出力成Excel文件。
+ * 读取旧版本intra-mart导出的菜单定义XML，出力成Excel文件。
+ * 
+ * ※XML中所有MENU都在一个层级，通过parent-menu-id指示上级菜单。
  */
-public class ReadXml {
+public class ReadClassicMenuXmlToExcel {
 
     private static String space = "";
-    // メニュー階層。
-    private static int hierarchy = 1;
     // 全局Sheet对象。
     private static XSSFSheet sheet = null;
     // Excel出力開始行。
@@ -43,8 +45,10 @@ public class ReadXml {
     // モジュール名
     private static String module = "";
 
+    private static List<Menu> menuList = new ArrayList<Menu>();
+
     public static void main(String[] args) {
-        try (XSSFWorkbook workbook = new XSSFWorkbook(new FileInputStream(new File("C:/01_input/メニュー情報.xlsx")));
+        try (XSSFWorkbook workbook = new XSSFWorkbook(new FileInputStream(new File("C:/01_input/メニュー情報（テンプレート）.xlsx")));
             FileOutputStream out = new FileOutputStream("C:/02_output/メニュー情報.xlsx");) {
 
             sheet = workbook.getSheet("メニュー一覧");
@@ -53,7 +57,7 @@ public class ReadXml {
             }
 
             // ファイル内容を読み込む。
-            List<String> lines = Files.lines(Paths.get("C:/01_input/exported-menu-group.xml"), StandardCharsets.UTF_8).collect(Collectors.toList());
+            List<String> lines = Files.lines(Paths.get("C:/01_input/menu_20210609.xml"), StandardCharsets.UTF_8).collect(Collectors.toList());
             StringBuffer buf = new StringBuffer();
             for (String line : lines) {
                 buf.append(line);
@@ -78,28 +82,26 @@ public class ReadXml {
 
     private static void walk(Node node) {
         for (Node ch = node.getFirstChild(); ch != null; ch = ch.getNextSibling()) {
-            space = "";
-            getSpecificNodeValue("menu-item", ch.getNodeName(), ch);
-        }
-    }
-
-    private static void getSpecificNodeValue(String targetNodeName, String nodeName, Node node) {
-        String type = "";
-        String displayName = "";
-        String menuId = "";
-        String menuHierarchy = "";
-        if (targetNodeName.equals(nodeName)) {
-            displayName = getDisplayName(node);
-            menuId = getAttribute(node, "menu-id");
-            type = getAttribute(node, "type");
-            menuHierarchy = String.valueOf(hierarchy);
-            if (hierarchy == 1) {
-                module = "-";
-            } else if (hierarchy == 2) {
-                module = displayName;
+            if ("menu".equals(ch.getNodeName())) {
+                Menu menu = new Menu();
+                menu.setDescription(getAttribute(ch, "description"));
+                if (menu.getDescription().length() == 0) {
+                    menu.setDescription(getDisplayName(ch));
+                }
+                menu.setMenuId(getAttribute(ch, "menu-id"));
+                menu.setMenuType(getAttribute(ch, "menu-type"));
+                menu.setParentMenuId(getAttribute(ch, "parent-menu-id"));
+                menuList.add(menu);
             }
-
-            System.out.println(space + displayName);
+        }
+        writeToExcel(menuList.stream().filter(o -> o.getParentMenuId().length() == 0).collect(Collectors.toList()));
+    }
+    
+    private static void writeToExcel(List<Menu> list) {
+        for (Menu menu : list) {
+            String menuId = menu.getMenuId();
+            String description = menu.getDescription();
+            String type = menu.getMenuType();
 
             // Excelの行をコピーする。
             ExcelUtil.copyRows(sheet, startRow, startRow, startRow + 1);
@@ -107,22 +109,21 @@ public class ReadXml {
             ExcelUtil.setCellValue(sheet, startRow, 1, module);
             ExcelUtil.setCellValue(sheet, startRow, 2, "folder".equals(type) ? "見出し" : "実行");
             ExcelUtil.setCellValue(sheet, startRow, 3, menuId);
-            ExcelUtil.setCellValue(sheet, startRow, 4, menuHierarchy);
-            ExcelUtil.setCellValue(sheet, startRow, 5, space + displayName);
+            ExcelUtil.setCellValue(sheet, startRow, 4, "");
+            ExcelUtil.setCellValue(sheet, startRow, 5, space + description);
 
             startRow += 1;
             no += 1;
-        }
-
-        for (Node ch = node.getFirstChild(); ch != null; ch = ch.getNextSibling()) {
+            
             if ("folder".equals(type)) {
                 space += "    ";
-                hierarchy += 1;
             }
-            getSpecificNodeValue("menu-item", ch.getNodeName(), ch);
+            List<Menu> sons = menuList.stream().filter(o -> menuId.equals(o.getParentMenuId())).collect(Collectors.toList());
+            if (sons.size() > 0) {
+                writeToExcel(sons);
+            }
             if ("folder".equals(type)) {
                 space = space.substring(0, space.length() - 4);
-                hierarchy -= 1;
             }
         }
     }
@@ -130,21 +131,26 @@ public class ReadXml {
     /**
      * display_nameの日本語名を取得する。
      * 例：
-     * <display-names>
-     *     <display-name locale="en">Tenant Management</display-name>
-     *     <display-name locale="zh_CN">Tenant管理</display-name>
-     *     <display-name locale="ja">テナント管理</display-name>
-     * </display-names>
+     * <display-name>
+     *     <locale-display-name>テナント管理</locale-display-name>
+     *     <locale>ja</locale>
+     * </display-name>
      */
     private static String getDisplayName(Node node) {
         NodeList list = node.getChildNodes();
         for (int i = 0; i < list.getLength(); i++) {
-            if ("display-names".equals(list.item(i).getNodeName())) {
+            if ("display-name".equals(list.item(i).getNodeName())) {
                 NodeList children = list.item(i).getChildNodes();
+                String displayName = null;
                 for (int j = 0; j < children.getLength(); j++) {
-                    if ("display-name".equals(children.item(j).getNodeName())
-                            && "ja".equals(getAttribute(children.item(j), "locale"))) {
-                        return children.item(j).getTextContent();
+                    if ("locale-display-name".equals(children.item(j).getNodeName())) {
+                        displayName = children.item(j).getTextContent();
+                    }
+                    if ("locale".equals(children.item(j).getNodeName())) {
+                        String local = children.item(j).getTextContent();
+                        if ("ja".equals(local)) {
+                            return displayName;
+                        }
                     }
                 }
             }
@@ -155,12 +161,22 @@ public class ReadXml {
     /**
      * Nodeの属性値を取得する。
      * 
-     * <node_name 属性="属性値" ...>
+     * 例：
+     * <node>
+     *     <attr>text</attr>
+     * </node>
      */
     private static String getAttribute(Node node, String attr) {
-        if (node.getAttributes() != null && node.getAttributes().getNamedItem(attr) != null) {
-            return node.getAttributes().getNamedItem(attr).getNodeValue();
+        NodeList list = node.getChildNodes();
+        for (int i = 0; i < list.getLength(); i++) {
+            if (attr.equals(list.item(i).getNodeName())) {
+                return list.item(i).getTextContent();
+            }
         }
         return "";
+    }
+
+    private static List<Menu> getSubList(List<Menu> list, String parent) {
+        return list.stream().filter(o -> parent.equals(o.getParentMenuId())).collect(Collectors.toList());
     }
 }

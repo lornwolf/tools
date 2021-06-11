@@ -16,6 +16,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import com.lornwolf.common.ExcelUtil;
+import com.lornwolf.home.bean.People;
 
 /**
  * 从一个Excel文件中读取姓名、身份证和手机号码信息，

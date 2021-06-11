@@ -1,4 +1,4 @@
-package com.lornwolf.home;
+package com.lornwolf.home.bean;
 
 public class People {
     // 身份证号
