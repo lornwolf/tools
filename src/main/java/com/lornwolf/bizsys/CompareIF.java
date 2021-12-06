@@ -20,7 +20,7 @@ import com.lornwolf.common.ExcelUtil;
 public class CompareIF {
 
     private String OLD_VERSION = "1.4.1_基本設計";
-    private String NEW_VERSION = "2.2.2_基本設計";
+    private String NEW_VERSION = "2.0.0_基本設計";
     // 旧版基本设计保存路径。
     private String input201 = "C:\\01_input\\" + OLD_VERSION;
     // 外部IF比较一览表的数据开始行（从0开始计数）。

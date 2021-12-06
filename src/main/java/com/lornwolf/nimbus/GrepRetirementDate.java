@@ -41,7 +41,7 @@ public class GrepRetirementDate {
                 }
                 FileInputStream inputStream = new FileInputStream(file);
                 // CSVファイルを読み込む。
-                InputStreamReader ireader=new InputStreamReader(inputStream, "UTF-8");
+                InputStreamReader ireader = new InputStreamReader(inputStream, "UTF-8");
                 CSVReader csvReader = new CSVReader(ireader);
                 // 出力フォルダを決める。
                 String path = output + file.getAbsolutePath().replace(input, "").replace(File.separator + file.getName(), "");

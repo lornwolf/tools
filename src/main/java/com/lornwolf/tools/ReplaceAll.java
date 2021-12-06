@@ -37,7 +37,7 @@ public class ReplaceAll {
                 // 读入文件所有内容。
                 ArrayList<String> file_content = (ArrayList<String>) FileUtils.readLines(file, encoding);
                 // 逐行判断。
-                for(int i = 0; i < file_content.size(); i++){
+                for (int i = 0; i < file_content.size(); i++) {
                     String str_line = file_content.get(i);
                     if (str_line.indexOf(search) >= 0) {
                         System.out.println(file.getPath() + " : " + str_line);

@@ -5,7 +5,6 @@ import java.util.Collection;
 
 import org.apache.commons.io.FileUtils;
 
-
 public class RemoveDuplicateFiles {
 
     public static void main(String[] args) {

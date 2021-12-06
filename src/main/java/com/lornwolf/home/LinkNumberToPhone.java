@@ -38,12 +38,14 @@ public class LinkNumberToPhone {
         // 人员信息Map。因为有重名，所以是一个名字对应一个列表。
         Map<String, List<People>> infoMap = new HashMap<String, List<People>>();
 
-        try {
+        try (InputStream ips01 = new FileInputStream(excel1);
+             XSSFWorkbook workbook01 = new XSSFWorkbook(ips01);
+             InputStream ips02 = new FileInputStream(excel2);
+             XSSFWorkbook workbook02 = new XSSFWorkbook(ips02);) {
 
-            InputStream ips01 = new FileInputStream(excel1);
-            XSSFWorkbook workbook01 = new XSSFWorkbook(ips01);
             XSSFSheet sheet01 = workbook01.getSheetAt(0);
 
+            // 读取Excel中的数据。
             for (int i = 3; i < 1096; i++) {
                 String name = ExcelUtil.getStr(ExcelUtil.getCell(sheet01, i, 1));
                 String number = ExcelUtil.getStr(ExcelUtil.getCell(sheet01, i, 8)).replace("General", "");
@@ -62,12 +64,10 @@ public class LinkNumberToPhone {
                     }
                 }
             }
-            workbook01.close();
 
-            InputStream ips02 = new FileInputStream(excel2);
-            XSSFWorkbook workbook02 = new XSSFWorkbook(ips02);
             XSSFSheet sheet02 = workbook02.getSheetAt(0);
 
+            // 向出力用的Excel中写入数据。
             for (int i = 3; i < 622; i++) {
                 String name = ExcelUtil.getStr(ExcelUtil.getCell(sheet02, i, 1));
                 List<People> peoples = infoMap.get(name);
@@ -88,12 +88,11 @@ public class LinkNumberToPhone {
 
             FileOutputStream fileOut = new FileOutputStream(outputPath);
             workbook02.write(fileOut);
-            workbook02.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        // 检查一下有没有重复信息。
+        // 检查一下有没有重复信息（姓名、身份证号、手机号都相同）。
         List<String> list = new ArrayList<String>();
         try (InputStream ips01 = new FileInputStream(outputPath);
             XSSFWorkbook workbook01 = new XSSFWorkbook(ips01);) {

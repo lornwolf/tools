@@ -38,11 +38,11 @@ public class CompareProject {
                 if(file_01.getPath().indexOf("\\.ractes\\")>0){
                     continue;
                 }
-    
+
                 if(file_01.getPath().indexOf("\\ac\\")>0){
                     continue;
                 }
-    
+
                 if(file_01.getPath().indexOf("\\entity\\")>0){
                     continue;
                 }
@@ -53,10 +53,8 @@ public class CompareProject {
 
                 File file_02 = new File(project_02_path + file_01.getPath().replace("\\", "/").replace(project_01_path, ""));
                 
-                if(!file_02.exists()) {
-
-                	String output_line = project_02 + "にない：" + file_02.getPath().replace("\\", "/").replace(project_01_path, "");
-
+                if (!file_02.exists()) {
+                    String output_line = project_02 + "にない：" + file_02.getPath().replace("\\", "/").replace(project_01_path, "");
                     output_contents.add(output_line);
                     output_contents.add("");
 
