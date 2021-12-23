@@ -7,12 +7,16 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+/**
+ * 批量修改图片尺寸。
+ * 指定修改后的宽度，高度自动计算。
+ */
 public class ImageReSize {
 
     /**
      * @param srcPath  源图片文件夹路径
      * @param desPath  修改大小后图片文件夹路径 
-     * @param scaleSize 图片的修改比例，目标宽度
+     * @param scaleSize 图片的修改比例，目标宽度。
      */
     public static void getFiles(String path, String destPath, int scaleSize) throws IOException {
         File file = new File(path);
@@ -29,7 +33,7 @@ public class ImageReSize {
     /**
      * @param srcPath  源图片路径
      * @param desPath  修改大小后图片路径 
-     * @param scaleSize 图片的修改比例，目标宽度
+     * @param scaleSize 图片的修改比例，目标宽度。
      */  
     public static void resizeImage(String srcPath, String desPath,int scaleSize) throws IOException {  
 
@@ -43,7 +47,7 @@ public class ImageReSize {
         }
         float width = bi.getWidth(); // 像素
         float height = bi.getHeight(); // 像素
-        float scale=width/scaleSize;
+        float scale = width/scaleSize;
         BufferedImage buffImg = null;  
         buffImg = new BufferedImage(scaleSize, (int)(height/scale), BufferedImage.TYPE_INT_RGB); 
         //使用TYPE_INT_RGB修改的图片会变色 
@@ -55,6 +59,6 @@ public class ImageReSize {
     }  
 
     public static void main(String []args) throws IOException{ 
-        getFiles("C:\\入力\\pictures","C:\\出力\\pictures", 200);
+        getFiles("C:\\01_入力\\pictures","C:\\02_出力\\pictures", 200);
     }
 }
